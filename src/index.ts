@@ -1,7 +1,27 @@
 /// <reference types="node" />
+
+var cluster = require('hierarchical-clustering');
+const util = require('util');
+
 type CliArgs = {
   teams: number | null;
   seed: number | null;
+};
+
+type Color = {
+  name: string;
+  value: number[];
+};
+
+type ClusterLevel = {
+  clusters: number[][];
+};
+
+type ClusterOptions = {
+  input: Color[];
+  distance: (a: Color, b: Color) => number;
+  linkage: (distances: number[]) => number;
+  minClusters: number;
 };
 
 function parseArgs(argv: string[]): CliArgs {
@@ -44,7 +64,46 @@ function parseArgs(argv: string[]): CliArgs {
 function main(): void {
   try {
     const args = parseArgs(process.argv.slice(2));
-    console.log("Parsed arguments:", args);
+
+    var colors = [
+      { name: "dark_blue", value: [20, 20, 80] },
+      { name: "navy_blue", value: [22, 22, 90] },
+      { name: "off_white", value: [250, 255, 253] },
+      { name: "purple", value: [100, 54, 255] }
+    ];
+     
+    // Euclidean distance
+    function distance(a: any, b: any) {
+      var d = 0;
+      for (var i = 0; i < a.value.length; i++) {
+        d += Math.pow(a.value[i] - b.value[i], 2);
+      }
+      return Math.sqrt(d);
+    }
+     
+    // Single-linkage clustering
+    function linkage(distances: number[]): number {
+      return Math.min.apply(null, distances);
+    }
+     
+    var levels: ClusterLevel[] = cluster({
+      input: colors,
+      distance: distance,
+      linkage: linkage,
+      minClusters: 2, // only want two clusters
+    });
+     
+    var clusters: number[][] = levels[levels.length - 1].clusters;
+    // console.log(clusters);
+
+    var colorClusters: Color[][] = clusters.map(function (cluster) {
+      return cluster.map(function (index) {
+        return colors[index];
+      });
+    });
+
+    console.log(util.inspect(colorClusters, { depth: 1000 }));
+
     console.log("Finished script.");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
