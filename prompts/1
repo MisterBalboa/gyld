@@ -1,0 +1,7 @@
+start a minimal TypeScript/Node script program, that can be run with
+npm start -- --teams 3 --seed 42
+it should parse command line arguments --teams and --seed
+the program should do nothing yet, just read the arguments, and print a finish script statement
+create a data folder, a src folder, a prompts folder with this prompt as first file named 1 and a package.json
+
+
