@@ -1,6 +1,11 @@
 import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import * as path from 'path';
+import {
+  analyzeDataset,
+  analyzeNumericColumn,
+  analyzeCategoricalColumn
+} from './stats-helpers';
 
 /**
  * Read an Excel file and return the data as JSON
@@ -90,7 +95,7 @@ export function readLevelAPlayers(): any[] {
 // Example usage
 if (require.main === module) {
   try {
-    console.log('Excel file reading examples:');
+    console.log('Excel file reading and statistical analysis examples:');
     
     // Example 1: Get file information
     const dataPath = path.join(__dirname, '..', 'data', 'level_a_players.xlsx');
@@ -105,8 +110,66 @@ if (require.main === module) {
       const data = readExcelFile(dataPath);
       console.log(`Found ${data.length} rows of data`);
       if (data.length > 0) {
-        console.log('First row:', data[0]);
         console.log('Column headers:', Object.keys(data[0]));
+        
+        // Example 3: Analyze all columns
+        console.log('\n3. Complete dataset analysis:');
+        const analysis = analyzeDataset(data);
+        console.log('Column types:', analysis.columnTypes);
+        
+        // Example 4: Show numeric column statistics
+        console.log('\n4. Numeric column statistics:');
+        Object.entries(analysis.numericColumns).forEach(([column, stats]) => {
+          console.log(`\n${column}:`);
+          console.log(`  Count: ${stats.count}`);
+          console.log(`  Range: ${stats.min} - ${stats.max} (${stats.range})`);
+          console.log(`  Mean: ${stats.mean.toFixed(2)}`);
+          console.log(`  Median: ${stats.median.toFixed(2)}`);
+          console.log(`  Mode: ${stats.mode}`);
+          console.log(`  Std Dev: ${stats.standardDeviation.toFixed(2)}`);
+          console.log(`  Variance: ${stats.variance.toFixed(2)}`);
+        });
+        
+        // Example 5: Show categorical column statistics
+        console.log('\n5. Categorical column statistics:');
+        Object.entries(analysis.categoricalColumns).forEach(([column, stats]) => {
+          console.log(`\n${column}:`);
+          console.log(`  Total count: ${stats.totalCount}`);
+          console.log(`  Unique values: ${stats.uniqueCount}`);
+          console.log(`  Mode: ${stats.mode} (count: ${stats.modeCount})`);
+          console.log('  Top 5 values:');
+          stats.frequencyTable.slice(0, 5).forEach((item: { value: any; count: number; percentage: number }) => {
+            console.log(`    ${item.value}: ${item.count} (${item.percentage.toFixed(1)}%)`);
+          });
+        });
+        
+        // Example 6: Specific column analysis examples
+        console.log('\n6. Specific column analysis examples:');
+        
+        // Numeric example
+        try {
+          const pointsStats = analyzeNumericColumn(data, 'current_total_points');
+          console.log('\ncurrent_total_points (numeric analysis):');
+          console.log(`  Mean: ${pointsStats.mean.toFixed(2)}`);
+          console.log(`  Standard deviation: ${pointsStats.standardDeviation.toFixed(2)}`);
+          console.log(`  Range: ${pointsStats.min} - ${pointsStats.max}`);
+        } catch (error) {
+          console.log('Error analyzing current_total_points:', error);
+        }
+        
+        // Categorical example
+        try {
+          const teamStats = analyzeCategoricalColumn(data, 'current_team_name');
+          console.log('\ncurrent_team_name (categorical analysis):');
+          console.log(`  Unique teams: ${teamStats.uniqueCount}`);
+          console.log(`  Most common team: ${teamStats.mode} (${teamStats.modeCount} players)`);
+          console.log('  Team distribution:');
+          teamStats.frequencyTable.forEach(item => {
+            console.log(`    ${item.value}: ${item.count} players (${item.percentage.toFixed(1)}%)`);
+          });
+        } catch (error) {
+          console.log('Error analyzing current_team_name:', error);
+        }
       }
     } else {
       console.log('level_a_players.xlsx not found in data directory');

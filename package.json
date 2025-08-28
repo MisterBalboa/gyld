@@ -5,7 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "tsx src/index.ts",
-    "explore": "tsx src/exploration.ts"
+    "explore": "tsx src/exploration.ts",
+    "stats": "tsx src/stats-helpers.ts"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
