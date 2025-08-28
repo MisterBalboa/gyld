@@ -2,6 +2,7 @@
 
 var cluster = require('hierarchical-clustering');
 const util = require('util');
+const xlsx = require('xlsx');
 
 type CliArgs = {
   teams: number | null;
@@ -61,9 +62,54 @@ function parseArgs(argv: string[]): CliArgs {
   return { teams, seed };
 }
 
+function readExcelData(): any[] {
+  try {
+    // Read the Excel file
+    const workbook = xlsx.readFile('data/level_a_players.xlsx');
+    
+    // Get the first sheet
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert to JSON
+    const jsonData = xlsx.utils.sheet_to_json(worksheet);
+    
+    // Transform to match colors variable shape using the actual Excel columns
+    const transformedData = jsonData.map((row: any, index: number) => {
+      // Extract relevant fields from the row using the actual column names
+      const name = row.player_id || `player_${index}`;
+      
+      // Create a value array using the numeric columns from the Excel data
+      const value = [
+        row.historical_events_participated || 0,
+        row.historical_event_engagements || 0,
+        row.historical_points_earned || 0,
+        row.historical_points_spent || 0,
+        row.historical_messages_sent || 0,
+        row.current_total_points || 0,
+        row.days_active_last_30 || 0,
+        row.current_streak_value || 0,
+        row.last_active_ts || 0,
+        row.current_team_id || 0
+      ];
+      
+      return { name, value };
+    });
+    
+    return transformedData;
+  } catch (error) {
+    console.error('Error reading Excel file:', error);
+    return [];
+  }
+}
+
 function main(): void {
   try {
     const args = parseArgs(process.argv.slice(2));
+
+    // Read data from Excel file
+    const excelData = readExcelData();
+    console.log('Excel data loaded:', excelData.length, 'entries');
 
     var colors = [
       { name: "dark_blue", value: [20, 20, 80] },
@@ -71,6 +117,9 @@ function main(): void {
       { name: "off_white", value: [250, 255, 253] },
       { name: "purple", value: [100, 54, 255] }
     ];
+     
+    // Use Excel data instead of colors for clustering
+    const dataToCluster = excelData.length > 0 ? excelData : colors;
      
     // Euclidean distance
     function distance(a: any, b: any) {
@@ -87,7 +136,7 @@ function main(): void {
     }
      
     var levels: ClusterLevel[] = cluster({
-      input: colors,
+      input: dataToCluster,
       distance: distance,
       linkage: linkage,
       minClusters: 2, // only want two clusters
@@ -98,7 +147,7 @@ function main(): void {
 
     var colorClusters: Color[][] = clusters.map(function (cluster) {
       return cluster.map(function (index) {
-        return colors[index];
+        return dataToCluster[index];
       });
     });
 

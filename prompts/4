@@ -1,0 +1,16 @@
+read excel file and create a variable with same shape as colors variable
+
+fix transformedData to consider this columns:
+
+  historical_events_participated: 7,
+  historical_event_engagements: 58,
+  historical_points_earned: 1860,
+  historical_points_spent: 1294,
+  historical_messages_sent: 1140,
+  current_total_points: 566,
+  days_active_last_30: 7,
+  current_streak_value: 4,
+  last_active_ts: 45870,
+  current_team_id: 3,
+  current_team_name: 'House_3',
+  player_id: 1
