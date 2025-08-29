@@ -92,8 +92,8 @@ function readExcelData(): any[] {
         row.current_total_points || 0,
         row.days_active_last_30 || 0,
         row.current_streak_value || 0,
-        row.last_active_ts || 0,
-        row.current_team_id || 0
+        // row.last_active_ts || 0, // to do range
+        // row.current_team_id || 0 // categorical data
       ];
       
       return { name, value };
@@ -114,13 +114,6 @@ function main(): void {
     const excelData = readExcelData();
     console.log('Excel data loaded:', excelData.length, 'entries');
 
-    // var colors = [
-    //   { name: "dark_blue", value: [20, 20, 80] },
-    //   { name: "navy_blue", value: [22, 22, 90] },
-    //   { name: "off_white", value: [250, 255, 253] },
-    //   { name: "purple", value: [100, 54, 255] }
-    // ];
-     
     // Use Excel data instead of colors for clustering
     const dataToCluster = excelData;
     
@@ -148,20 +141,15 @@ function main(): void {
       input: scaledData,
       distance: distance,
       linkage: linkage,
-      minClusters: 3,
+      minClusters: args.teams || 3,
     });
      
     var clusters: number[][] = levels[levels.length - 1].clusters;
-    // console.log(clusters);
 
-    var colorClusters: Color[][] = clusters.map(function (cluster, index) {
-      console.log('cluster length: ', index, cluster.length)
-      return cluster.map(function (index) {
-        return dataToCluster[index];
-      });
+    clusters.forEach(function (cluster, index) {
+      console.log('TEAM: ', index, 'cluster length: ', cluster.length)
+      cluster.forEach((member) => console.log('\tmember: ', dataToCluster[member].name))
     });
-
-    // console.log(util.inspect(colorClusters, { depth: 1000 }));
 
     console.log("Finished script.");
   } catch (error) {
