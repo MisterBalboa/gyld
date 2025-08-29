@@ -196,6 +196,107 @@ export function analyzeCategoricalColumn(data: any[], columnName: string) {
 }
 
 // ============================================================================
+// FEATURE STATISTICS FOR CLUSTERING
+// ============================================================================
+
+/**
+ * Interface for feature statistics used in data scaling
+ */
+export interface FeatureStats {
+  min: number;
+  max: number;
+  mean: number;
+  stddev: number;
+}
+
+/**
+ * Analyze dataset and create FeatureStats for each numeric feature
+ * @param data - Array of objects with 'value' property containing numeric arrays
+ * @returns Object mapping feature index to FeatureStats
+ */
+export function createFeatureStats(data: Array<{ name: string; value: number[] }>): { [featureIndex: number]: FeatureStats } {
+  if (data.length === 0) {
+    throw new Error('Cannot create feature stats for empty dataset');
+  }
+
+  const numFeatures = data[0].value.length;
+  const featureStats: { [featureIndex: number]: FeatureStats } = {};
+
+  // For each feature dimension
+  for (let featureIndex = 0; featureIndex < numFeatures; featureIndex++) {
+    // Extract all values for this feature
+    const featureValues = data.map(item => item.value[featureIndex]).filter(val => typeof val === 'number' && !isNaN(val));
+    
+    if (featureValues.length === 0) {
+      throw new Error(`No valid numeric values found for feature ${featureIndex}`);
+    }
+
+    // Calculate statistics for this feature
+    const stats = calculateNumericStats(featureValues);
+    
+    featureStats[featureIndex] = {
+      min: stats.min,
+      max: stats.max,
+      mean: stats.mean,
+      stddev: stats.standardDeviation
+    };
+  }
+
+  return featureStats;
+}
+
+/**
+ * Scale a single value using feature statistics
+ * @param value - The value to scale
+ * @param featStats - Feature statistics for the dimension
+ * @returns Scaled value
+ */
+export function scaleFeature(value: number, featStats: FeatureStats): number {
+  // First normalize (min-max scaling to [0,1])
+  const normalized = (value - featStats.min) / (featStats.max - featStats.min);
+  
+  // Then standardize (z-score normalization)
+  return (normalized - featStats.mean) / featStats.stddev;
+}
+
+/**
+ * Scale an entire dataset using feature statistics
+ * @param data - Array of objects with 'value' property containing numeric arrays
+ * @param featureStats - Feature statistics for each dimension
+ * @returns Scaled dataset with same structure
+ */
+export function scaleDataset(data: Array<{ name: string; value: number[] }>, featureStats: { [featureIndex: number]: FeatureStats }): Array<{ name: string; value: number[] }> {
+  return data.map(item => ({
+    name: item.name,
+    value: item.value.map((val, featureIndex) => {
+      const stats = featureStats[featureIndex];
+      if (!stats) {
+        throw new Error(`No statistics found for feature ${featureIndex}`);
+      }
+      return scaleFeature(val, stats);
+    })
+  }));
+}
+
+/**
+ * Complete pipeline: analyze dataset and return scaled data
+ * @param data - Array of objects with 'value' property containing numeric arrays
+ * @returns Object containing feature stats and scaled data
+ */
+export function analyzeAndScaleDataset(data: Array<{ name: string; value: number[] }>): {
+  featureStats: { [featureIndex: number]: FeatureStats };
+  scaledData: Array<{ name: string; value: number[] }>;
+} {
+  const featureStats = createFeatureStats(data);
+  const scaledData = scaleDataset(data, featureStats);
+  
+  return {
+    featureStats,
+    scaledData
+  };
+}
+
+// ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 

@@ -3,6 +3,7 @@
 var cluster = require('hierarchical-clustering');
 const util = require('util');
 const xlsx = require('xlsx');
+const { analyzeAndScaleDataset } = require('./stats-helpers');
 
 type CliArgs = {
   teams: number | null;
@@ -62,6 +63,8 @@ function parseArgs(argv: string[]): CliArgs {
   return { teams, seed };
 }
 
+
+
 function readExcelData(): any[] {
   try {
     // Read the Excel file
@@ -111,15 +114,21 @@ function main(): void {
     const excelData = readExcelData();
     console.log('Excel data loaded:', excelData.length, 'entries');
 
-    var colors = [
-      { name: "dark_blue", value: [20, 20, 80] },
-      { name: "navy_blue", value: [22, 22, 90] },
-      { name: "off_white", value: [250, 255, 253] },
-      { name: "purple", value: [100, 54, 255] }
-    ];
+    // var colors = [
+    //   { name: "dark_blue", value: [20, 20, 80] },
+    //   { name: "navy_blue", value: [22, 22, 90] },
+    //   { name: "off_white", value: [250, 255, 253] },
+    //   { name: "purple", value: [100, 54, 255] }
+    // ];
      
     // Use Excel data instead of colors for clustering
-    const dataToCluster = excelData.length > 0 ? excelData : colors;
+    const dataToCluster = excelData;
+    
+    // Analyze and scale the data for clustering
+    const { featureStats, scaledData } = analyzeAndScaleDataset(dataToCluster);
+    console.log('Feature statistics calculated for', Object.keys(featureStats).length, 'features');
+    console.log('Sample feature stats:', Object.entries(featureStats).slice(0, 2));
+    console.log('Sample scaled data:', scaledData.slice(0, 2));
      
     // Euclidean distance
     function distance(a: any, b: any) {
@@ -136,22 +145,23 @@ function main(): void {
     }
      
     var levels: ClusterLevel[] = cluster({
-      input: dataToCluster,
+      input: scaledData,
       distance: distance,
       linkage: linkage,
-      minClusters: 2, // only want two clusters
+      minClusters: 3,
     });
      
     var clusters: number[][] = levels[levels.length - 1].clusters;
     // console.log(clusters);
 
-    var colorClusters: Color[][] = clusters.map(function (cluster) {
+    var colorClusters: Color[][] = clusters.map(function (cluster, index) {
+      console.log('cluster length: ', index, cluster.length)
       return cluster.map(function (index) {
         return dataToCluster[index];
       });
     });
 
-    console.log(util.inspect(colorClusters, { depth: 1000 }));
+    // console.log(util.inspect(colorClusters, { depth: 1000 }));
 
     console.log("Finished script.");
   } catch (error) {
