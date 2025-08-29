@@ -79,21 +79,7 @@ export function calculateNumericStats(values: number[]): {
   };
 }
 
-/**
- * Calculate statistics for a specific column in the dataset
- * @param data - Array of objects (dataset)
- * @param columnName - Name of the column to analyze
- * @returns Statistical measures for the column
- */
-export function analyzeNumericColumn(data: any[], columnName: string) {
-  const values = data.map(row => row[columnName]).filter(val => typeof val === 'number' && !isNaN(val));
-  
-  if (values.length === 0) {
-    throw new Error(`No numeric values found in column '${columnName}'`);
-  }
-  
-  return calculateNumericStats(values);
-}
+
 
 // ============================================================================
 // CATEGORICAL STATISTICAL FUNCTIONS
@@ -345,7 +331,10 @@ export function analyzeDataset(data: any[]): {
     
     try {
       if (type === 'numeric') {
-        numericColumns[column] = analyzeNumericColumn(data, column);
+        const values = data.map(row => row[column]).filter(val => typeof val === 'number' && !isNaN(val));
+        if (values.length > 0) {
+          numericColumns[column] = calculateNumericStats(values);
+        }
       } else {
         categoricalColumns[column] = analyzeCategoricalColumn(data, column);
       }

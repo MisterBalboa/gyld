@@ -82,7 +82,7 @@ function readExcelData(): any[] {
       // Extract relevant fields from the row using the actual column names
       const name = row.player_id || `player_${index}`;
       
-      // Create a value array using the numeric columns from the Excel data
+      // Create feature vector from numeric columns
       const value = [
         row.historical_events_participated || 0,
         row.historical_event_engagements || 0,
@@ -91,9 +91,7 @@ function readExcelData(): any[] {
         row.historical_messages_sent || 0,
         row.current_total_points || 0,
         row.days_active_last_30 || 0,
-        row.current_streak_value || 0,
-        // row.last_active_ts || 0, // to do range
-        // row.current_team_id || 0 // categorical data
+        row.current_streak_value || 0
       ];
       
       return { name, value };
@@ -146,9 +144,10 @@ function main(): void {
      
     var clusters: number[][] = levels[levels.length - 1].clusters;
 
+    console.log('\n=== CLUSTERING RESULTS ===');
     clusters.forEach(function (cluster, index) {
-      console.log('TEAM: ', index, 'cluster length: ', cluster.length)
-      cluster.forEach((member) => console.log('\tmember: ', dataToCluster[member].name))
+      console.log(`\nTeam ${index + 1} (${cluster.length} members):`);
+      cluster.forEach((member) => console.log(`  - ${dataToCluster[member].name}`));
     });
 
     console.log("Finished script.");
